@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import TweetForm from "@/components/TweetForm";
 import TweetList from "@/components/TweetList";
-import { Tweet } from "@/types"; 
+import type { Tweet } from "@/types"; 
 import { LogOut, MessageSquare, User, Globe,UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
