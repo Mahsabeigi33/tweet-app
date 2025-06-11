@@ -11,8 +11,20 @@ exports.createTweet = async (req, res) => {
 };
 
 exports.getAllTweets = async (req, res) => {
-  const tweets = await Tweet.find().sort({ updatedAt: -1 });
-  res.json(tweets);
+  try {
+    const tweets = await Tweet.find()
+      .populate("userId", "email")
+      .sort({ createdAt: -1 }); 
+    
+    const tweetsWithAuthor = tweets.map(tweet => ({
+      ...tweet.toObject(),
+      author: tweet.userId 
+    }));
+    
+    res.json(tweetsWithAuthor);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 exports.updateTweet = async (req, res) => {
@@ -33,8 +45,24 @@ exports.deleteTweet = async (req, res) => {
   res.json({ message: "Tweet deleted" });
 };
 exports.getUserTweets = async (req, res) => {
-  const tweets = await Tweet.find({ userId: req.userId }).sort({ updatedAt: -1 });
-  res.json(tweets);
+  try {
+    const { userId } = req.params;
+    // If no userId in params, use the authenticated user's ID
+    const targetUserId = userId || req.userId;
+    
+    const tweets = await Tweet.find({ userId: targetUserId })
+      .populate("userId", "email ")
+      .sort({ createdAt: -1 });
+    
+    const tweetsWithAuthor = tweets.map(tweet => ({
+      ...tweet.toObject(),
+      author: tweet.userId 
+    }));
+    
+    res.json(tweetsWithAuthor);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 exports.getTweetById = async (req, res) => {
   const { id } = req.params;

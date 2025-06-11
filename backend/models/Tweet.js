@@ -4,10 +4,20 @@ const tweetSchema = new mongoose.Schema(
   {
     text: { type: String, required: true, maxlength: 140 },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    updatedAt: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now }
   },
-  { timestamps: true }
+  { timestamps: true ,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
-
+tweetSchema.virtual('author', {
+  ref: 'User',
+  localField: 'userId',
+  foreignField: '_id',
+  justOne: true
+});
 module.exports = mongoose.model("Tweet", tweetSchema);
-// This code defines a Mongoose schema for a Tweet model, which includes the tweet text and a reference to the user who created it. The tweet text is required and has a maximum length of 140 characters. The timestamps option automatically adds createdAt and updatedAt fields to the schema. The model is then exported for use in other parts of the application.
-// The Tweet model can be used to create, read, update, and delete tweets in a MongoDB database using Mongoose.
+// This code defines the Tweet model with a schema that includes text, userId, and timestamps.
+// The userId field references the User model, and the schema includes virtuals for author information.
