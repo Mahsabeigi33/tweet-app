@@ -9,9 +9,13 @@ interface Props {
   onEdit: (tweet: Tweet) => void;
   onDelete: (id: string) => void;
   formatDate: (date: string) => string;
+  currentUserId?: string;
+  showActionButton?: boolean; 
+ 
 }
 
-export default function TweetList({ tweets, isLoading, onEdit, onDelete, formatDate }: Props) {
+export default function TweetList({ tweets, isLoading, onEdit, onDelete, formatDate,showActionButton = true,currentUserId }: Props) {
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -39,6 +43,8 @@ export default function TweetList({ tweets, isLoading, onEdit, onDelete, formatD
           onEdit={onEdit}
           onDelete={onDelete}
           formatDate={formatDate}
+          showActionButton ={showActionButton}
+          currentUserId={currentUserId}
         />
       ))}
     </div>

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ export default function TweetForm({
   isSubmitting,
   error,
 }: Props) {
-  const remainingChars = 280 - text.length;
+  const remainingChars = 140 - text.length;
 
   return (
     <div className="mb-8">

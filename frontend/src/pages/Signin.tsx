@@ -1,3 +1,4 @@
+import React from "react";
 import { useState } from "react";
 import { api } from "../lib/api";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ export default function Signin() {
       }
   
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       // Redirect to dashboard
      navigate("/dashboard");
     } catch (err: any) {

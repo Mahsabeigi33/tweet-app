@@ -8,9 +8,14 @@ interface Props {
   onEdit: (tweet: Tweet) => void;
   onDelete: (id: string) => void;
   formatDate: (date: string) => string;
+  showActionButton?: boolean; 
+  currentUserId?: string; 
 }
 
-export default function TweetCard({ tweet, onEdit, onDelete, formatDate }: Props) {
+export default function TweetCard({ tweet, onEdit, onDelete, formatDate ,showActionButton = true,
+  currentUserId}: Props) {
+    const isOwnTweet = tweet.author?._id?.toString() === currentUserId;
+
   return (
     <div className="bg-white/90 p-6 shadow-md rounded-lg">
       <div className="flex justify-between items-start">
@@ -19,7 +24,18 @@ export default function TweetCard({ tweet, onEdit, onDelete, formatDate }: Props
             <User className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">You</p>
+            <p className="font-medium text-gray-900">
+            {isOwnTweet ? (
+                <span className="flex items-center space-x-2">
+                    <Badge variant="secondary" className="text-xs">
+                      You
+                    </Badge>
+                </span>
+              ) : (
+                <span><Badge variant="secondary" className="text-xs">{tweet.author?.email  || 'Unknown User'}</Badge></span>
+              )}
+
+            </p>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Clock className="w-3 h-3" />
               <span>{formatDate(tweet.createdAt)}</span>
@@ -31,6 +47,7 @@ export default function TweetCard({ tweet, onEdit, onDelete, formatDate }: Props
             </div>
           </div>
         </div>
+        {showActionButton &&(
         <div className="flex space-x-2">
           <Button size="sm" onClick={() => onEdit(tweet)} className="h-8 px-2">
             <Edit className="w-4 h-4" />
@@ -39,6 +56,7 @@ export default function TweetCard({ tweet, onEdit, onDelete, formatDate }: Props
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+        )}
       </div>
       <p className="mt-4 text-gray-900 whitespace-pre-wrap">{tweet.text}</p>
     </div>

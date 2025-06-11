@@ -1,11 +1,10 @@
-// Dashboard.tsx
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import TweetForm from "@/components/TweetForm";
 import TweetList from "@/components/TweetList";
-import { Tweet } from "../types/tweet"; 
-import { LogOut, MessageSquare, User } from "lucide-react";
+import { Tweet } from "@/types"; 
+import { LogOut, MessageSquare, User, Globe,UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
@@ -13,13 +12,27 @@ export default function Dashboard() {
   const [editingTweetId, setEditingTweetId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState<"all" | "user">("user"); 
 
   const queryClient = useQueryClient();
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const { data: tweets = [], isLoading } = useQuery<Tweet[]>({
-    queryKey: ["tweets"],
-    queryFn: async () => (await api.get("/tweets")).data,
+///query for user tweets
+const {data:userTweets=[],isLoading:userTweetsLoading} = useQuery<Tweet[]>({
+    queryKey: ["tweets", "user",currentUser.id],
+    queryFn: async () => (await api.get(`/tweets/user/${currentUser.id}`)).data,
+    enabled: viewMode === "user" && !!currentUser.id,
   });
+
+  // Query for all tweets
+  const { data: allTweets = [], isLoading: isLoadingAllTweets } = useQuery<Tweet[]>({
+    queryKey: ["tweets","all"],
+    // If viewMode is "user", fetch user-specific tweets, otherwise fetch all tweets
+    queryFn: async () => (await api.get("/tweets")).data,
+    enabled: viewMode === "all",
+  });
+  const tweets = viewMode === "user" ? userTweets : allTweets;
+  const isLoading = viewMode === "user" ? userTweetsLoading : isLoadingAllTweets;
 
   const tweetMutation = useMutation({
     mutationFn: async () => {
@@ -31,7 +44,8 @@ export default function Dashboard() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["tweets"]);
+      queryClient.invalidateQueries({ queryKey: ["tweets","user"] });
+      queryClient.invalidateQueries({queryKey: ["tweets","all"] });
       setText("");
       setEditingTweetId(null);
     },
@@ -40,7 +54,7 @@ export default function Dashboard() {
 
   const handleSubmit = () => {
     if (text.trim().length === 0) return setError("Tweet cannot be empty");
-    if (text.length > 280) return setError("Tweet must be 280 characters or less");
+    if (text.length > 140) return setError("Tweet must be 140 characters or less");
     setError("");
     tweetMutation.mutate();
   };
@@ -58,7 +72,7 @@ export default function Dashboard() {
   const deleteTweet = async (id: string) => {
     if (window.confirm("Are you sure?")) {
       await api.delete(`/tweets/${id}`);
-      queryClient.invalidateQueries(["tweets"]);
+      queryClient.invalidateQueries({queryKey:["tweets"]});
     }
   };
 
@@ -72,8 +86,6 @@ export default function Dashboard() {
     if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
     return date.toLocaleDateString();
   };
-
-  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const handleSignout = async () => {
     try {
       await api.post("/auth/logout");
@@ -84,10 +96,12 @@ export default function Dashboard() {
       console.error("Sign out failed:", err);
     }
   }
- 
-  // Calculate remaining characters
-    const remainingChars = 280 - text.length;
-
+  const handleViewModeChange = (mode :"all" | "user")=>{
+    setViewMode(mode);
+    setText("");
+    setEditingTweetId(null);
+    setError("");
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -98,7 +112,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
-            <span className="text-sm text-gray-600">Welcome</span>
+            <span className="text-sm text-gray-600">Welcome {currentUser.email || "Guest"}</span>
             <div className="flex-grow" />
             <Button
               variant="outline"
@@ -113,9 +127,9 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center space-x-2">
               <User className="w-5 h-5 text-gray-600" />
-              <span className="text-lg font-semibold text-gray-900">TweetApp</span>
+              <span className="text-lg font-semibold text-gray-900">Dashboard</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-xl font-bold text-blue-700">TweetApp</h1>
           </div>
         </div>
       </div>
@@ -131,12 +145,36 @@ export default function Dashboard() {
           isSubmitting={isSubmitting}
           error={error}
         />
+         {/* View Mode Toggle */}
+         <div className="mb-6 flex items-center justify-center space-x-1 bg-white rounded-lg p-1 shadow-sm border">
+          <Button
+            variant={viewMode === "user" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => handleViewModeChange("user")}
+            className="flex items-center space-x-2"
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>My Tweets</span>
+          </Button>
+          <Button
+            variant={viewMode === "all" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => handleViewModeChange("all")}
+            className="flex items-center space-x-2"
+          >
+            <Globe className="w-4 h-4" />
+            <span>All Tweets</span>
+          </Button>
+        </div>
+
         <TweetList
           tweets={tweets}
           isLoading={isLoading}
           onEdit={startEdit}
           onDelete={deleteTweet}
           formatDate={formatDate}
+          currentUserId={currentUser.id} 
+          showActionButton ={viewMode === "user"} 
         />
       </div>
     </div>
