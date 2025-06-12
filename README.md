@@ -29,6 +29,7 @@ A full-stack Twitter-style application built in 4 days as part of a developer as
 ###  Authentication
 - Email/password signup and login
 - JWT-based session management
+- Google Login Authentication
 
 ### Tweets
 - Create a tweet 
