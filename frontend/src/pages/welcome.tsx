@@ -32,7 +32,7 @@ export default function Welcome() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-blue-50 to-indigo-50">
       <div className="text-center bg-white p-8 rounded-xl shadow-md w-[600px]">
         <div className="flex justify-center mb-4">
-          <div className="bg-blue-600 text-white p-3 rounded-full">
+          <div className="bg-blue-600 text-white p-3 rounded-full w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
             <img src="/logo.svg" alt="Logo" className="w-12 h-12" />
           </div>
         </div>

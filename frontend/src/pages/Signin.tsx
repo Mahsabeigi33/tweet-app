@@ -56,7 +56,10 @@ export default function Signin() {
           <CardHeader className="space-y-1 pb-8">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
+                <Link to="/">
+                  <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
+                </Link>
+               
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-center text-gray-900">
