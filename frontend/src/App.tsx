@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard"
 import { Navigate } from "react-router-dom"
 import React from "react";
 import { useState,useEffect } from "react";
+import Welcome from "./pages/welcome"
 
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Welcome />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/signin" element={<Signin />} />
       <Route path="/dashboard" element={
