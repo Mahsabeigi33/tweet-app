@@ -1,6 +1,7 @@
 {
     "env": {
-    "VITE_API_URL": "https://tweet-app-6c85.onrender.com/api"
+    "VITE_API_URL": "https://tweet-app-6c85.onrender.com/api",
+    "VITE_GOOGLE_CLIENT_ID":"790518519392-29ogt0oi5l564ivtq4h8o22hud30fode.apps.googleusercontent.com"
     },
     "rewrites": [
       {

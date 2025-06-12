@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Mail ,LogInIcon} from "lucide-react";
+import { UserPlus ,LogInIcon} from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
+import { api } from "../lib/api";
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -12,6 +14,19 @@ export default function Welcome() {
       navigate("/dashboard");
     }
   }, []);
+
+  const handleGoogleLogin = async (credentialResponse: any) => {
+    try {
+      const res = await api.post("/auth/google", {
+        credential: credentialResponse.credential,
+      });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google login failed:", err);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-blue-50 to-indigo-50">
@@ -37,6 +52,13 @@ export default function Welcome() {
             <LogInIcon className="w-4 h-4 mr-2" />
             Sign In
           </Button>
+          <div className="pt-2 border-t border-gray-200">
+          <GoogleLogin
+          onSuccess={handleGoogleLogin}
+          onError={() => console.log("Google Sign-In failed")}
+        />
+</div>
+
         </div>
       </div>
     </div>
