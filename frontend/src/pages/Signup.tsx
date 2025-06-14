@@ -5,23 +5,71 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
-import { Link } from "react-router-dom";
-import { api } from "../lib/api"; 
-// import { useNavigate } from "react-router-dom"; // Uncomment if using navigate for redirection
-// import { useQueryClient } from "@tanstack/react-query"; // Uncomment if using react-query for caching
+import { Link, useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
+
+interface SignupData {
+  email: string;
+  password: string;
+}
+
+interface SignupResponse {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+  };
+  token?: string; 
+}
+
 export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  // React Query mutation for signup
+  const signupMutation = useMutation({
+
+    mutationFn: async (data: SignupData): Promise<SignupResponse> => {
+      const response = await api.post("/auth/signup", data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Option 1: Auto-login after successful signup (if your API returns a token)
+      if (data.token) {
+        login(data.token);
+        navigate("/dashboard");
+      } else {
+        // Option 2: Redirect to signin page with success message
+        navigate("/signin", { 
+          state: { 
+            message: "Account created successfully! Please sign in." 
+          } 
+        });
+      }
+    },
+    onError: (err: any) => {
+      // Handle signup errors
+      if (err.response && err.response.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response && err.response.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    }
+  });
 
   const handleSignup = async () => {
     setError("");
-    setSuccess("");
   
     // Frontend validation
     if (!email || !password || !confirmPassword) {
@@ -38,43 +86,32 @@ export default function Signup() {
       setError("Password must be at least 8 characters long");
       return;
     }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
   
-    setIsLoading(true);
-  
-    try {
-      // ✅ Real API Call to Express backend
-      await api.post("/auth/signup", {
-        email,
-        password,
-      });
-  
-      setSuccess("Account created successfully! Redirecting to login...");
-  
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        window.location.href = "/signin"; 
-      }, 2000);
-    } catch (err: any) {
-      // Show server error
-      if (err.response && err.response.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
+    // Trigger the mutation
+    signupMutation.mutate({ email, password });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSignup();
     }
   };
-   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-600 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-600 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="space-y-1 pb-8">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-               <Link to="/">
+                <Link to="/">
                   <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
                 </Link>
               </div>
@@ -96,10 +133,10 @@ export default function Signup() {
               </Alert>
             )}
             
-            {success && (
+            {signupMutation.isSuccess && !signupMutation.data?.token && (
               <Alert className="border-green-200 bg-green-50">
                 <AlertDescription className="text-green-700">
-                  {success}
+                  Account created successfully! Redirecting to sign in...
                 </AlertDescription>
               </Alert>
             )}
@@ -117,8 +154,9 @@ export default function Signup() {
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onKeyPress={handleKeyPress}
                     className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    disabled={isLoading}
+                    disabled={signupMutation.isPending}
                   />
                 </div>
               </div>
@@ -132,17 +170,18 @@ export default function Signup() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a password"
+                    placeholder="Create a password (min. 8 characters)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={handleKeyPress}
                     className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    disabled={isLoading}
+                    disabled={signupMutation.isPending}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={isLoading}
+                    disabled={signupMutation.isPending}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -161,14 +200,15 @@ export default function Signup() {
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    onKeyPress={handleKeyPress}
                     className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    disabled={isLoading}
+                    disabled={signupMutation.isPending}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={isLoading}
+                    disabled={signupMutation.isPending}
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -179,9 +219,9 @@ export default function Signup() {
             <Button 
               onClick={handleSignup} 
               className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium transition-all duration-200 transform hover:scale-[1.02]"
-              disabled={isLoading}
+              disabled={signupMutation.isPending}
             >
-              {isLoading ? (
+              {signupMutation.isPending ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Creating account...</span>
@@ -204,8 +244,6 @@ export default function Signup() {
             </div>
           </CardContent>
         </Card>
-        
-    
       </div>
     </div>
   );
